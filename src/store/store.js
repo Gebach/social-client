@@ -2,33 +2,57 @@ import { makeAutoObservable } from 'mobx'
 import AuthService from '../services/authService'
 
 export default class Store {
-  user = {}
-  isAuth = false
-  isLoading = false
+  _user = {}
+  _isAuth = false
+  _isLoading = false
 
   constructor() {
     makeAutoObservable(this)
   }
 
-  setUser(user) {
-    this.user = user
+  _setUser(user) {
+    this._user = user
   }
 
-  setAuth(bool) {
-    this.isAuth = bool
+  _setAuth(bool) {
+    this._isAuth = bool
   }
 
-  setLoading(bool) {
-    this.isAuth = bool
+  _setLoading(bool) {
+    this._isLoading = bool
+  }
+
+  saveUserData(userData) {
+    localStorage.setItem('token', userData.refreshToken)
+    this._setUser(userData.user)(userData.user)(this._user)
+    this._setAuth(true)
+  }
+
+  getUser() {
+    if (localStorage.getItem('token')) {
+      return this._user
+    }
   }
 
   async registration(email, login, password) {
     try {
-      const response = await AuthService.registration(email, login, password)
-      console.log(response)
-      localStorage.setItem('token', response.data.refreshToken)
-      this.setUser(response.data.user)
-      this.setAuth(true)
+      const res = await AuthService.registration(email, login, password)
+      console.log(res)
+      this.saveUserData()(res.data.user.id)
+      return res.data.user.id
+    } catch (err) {
+      console.log(err)
+    }
+  }
+
+  async login(login, password) {
+    try {
+      const res = await AuthService.login(login, password)
+      console.log(res)
+
+      this.saveUserData(res.data)(res.data)(this._user)(res.data.user.id)
+
+      return res.data.user.id
     } catch (err) {
       console.log(err)
     }
